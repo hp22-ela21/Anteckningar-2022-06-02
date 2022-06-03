@@ -1,0 +1,167 @@
+OBS! Följande dokument förutsätter att föregående delar har lästs igenom!
+
+#####################################################################################
+# Del I - Några nya Linuxkommandon.
+#####################################################################################
+
+1. Skapa en ny fil main.c utan att öppna denna:
+-------------------------------------------------------------------------------------
+$ touch main.c
+-------------------------------------------------------------------------------------
+
+2. Dirigera från en barnkatalog till dess förälderkatalog, exempelvis
+   från /home/erik/dir1 till /home/erik:
+-------------------------------------------------------------------------------------
+$ cd ..
+-------------------------------------------------------------------------------------
+
+3. Dirigera till föregående katalog, där nuvarande katalog dirigerades till via kommandot cd:
+-------------------------------------------------------------------------------------
+$ cd --
+-------------------------------------------------------------------------------------
+
+4. Gå tillbaka till hemkatalogen:
+-------------------------------------------------------------------------------------
+$ cd
+-------------------------------------------------------------------------------------
+
+eller
+-------------------------------------------------------------------------------------
+$ cd ~
+-------------------------------------------------------------------------------------
+
+#####################################################################################
+# Del II - Shell-script
+#####################################################################################
+
+Ett flertal Linuxkommandon kan placeras i så kallade Shell-script, vilket ungefär motsvarar ett program.
+Shell-script möjliggör att man inte behöver repetera ett flertal kommandon flera gånger för att få något gjort.
+I stället kör man sitt shell-script.
+
+Ett shell-script har ändelsen .sh, vilket står för Bash (Bourne Again Shell) och 
+skapas precis som övriga filer. 
+
+För att skapa ett shell-script döpt main.sh utan att öppna denna kan följande kommando användas:
+-------------------------------------------------------------------------------------
+$ touch main.sh
+-------------------------------------------------------------------------------------
+
+För att öppna motsvarande shell-script döpt main.sh med radnummer kan följande kommando användas:
+-------------------------------------------------------------------------------------
+$ nano main.sh -l
+-------------------------------------------------------------------------------------
+
+Det finns ett flertal olika Unix-shell som används i Linux, varav bash är default.
+Längst upp i shell-skriptet skrivs därmed en så kallad shebang, som talar om för 
+operativsystemet vilket shell som skall användas som intepreterare för att tolka innehållet.
+ 
+För att indikera bash skall användas som intepreterare skrivs följande shebang:
+-------------------------------------------------------------------------------------
+#!/bin/bash
+-------------------------------------------------------------------------------------
+
+Tecknet # används också för enkelradiga kommentarer:
+-------------------------------------------------------------------------------------
+# Detta är en enkelradig kommentar.
+-------------------------------------------------------------------------------------
+
+För kommentarsblock används : ' för att påbörja samt ' för att avsluta blocket:
+-------------------------------------------------------------------------------------
+: '
+Följande kommentar ingår i ett kommentarsblock.
+Varje rad mellan : ' ovan samt ' ovan tolkas därmed som en kommentar.
+'
+-------------------------------------------------------------------------------------
+
+Det går också att använda blockkommentarer med tecknet #:
+-------------------------------------------------------------------------------------
+#####################################################################################
+# Följande stil kan också används för kommentarsblock. Dock är detta inte ett
+# regelrätt kommentarsblock, så tecknet # måste placeras längst till vänster på
+# varje rad.
+#####################################################################################
+-------------------------------------------------------------------------------------
+
+I shell-scriptet kan som sagt ett flertal kommandon placeras i en följt. Det är också
+möjligt att använda funktioner, villkorssatser och variabler, såsom i ett vanligt
+programmeringsspråk. 
+
+Nedan demonstreras ett shell-skript som används för att blinka två lysdioder anslutna
+till PIN 17 samt 22 var 50:e millisekund via kommandon från biblioteket libgpiod:
+
+-------------------------------------------------------------------------------------
+1  #/bin/bash
+2 
+3  while true # Blinkar lysdioderna kontinuerligt.
+4  do
+5    gpioset --mode=time -u 50000 0 17=1 22=0 # Tänder PIN 17, släcker PIN 22.
+6    gpioset --mode=time -u 50000 0 17=0 22=1 # Släcker PIN 17, tänder PIN 22.
+7  done
+-------------------------------------------------------------------------------------
+
+Innehållet i filen kan sparas utan att stänga nano-editorn genom att trycka på CTRL + O.
+Detta kan med fördel genomföras regelbundet för att inte råka förlora massa arbete.
+
+Eftersom bash är ett intepreterat språk så kompileras inte kommandona. Varje instruktion
+översätts i stället till maskinkod när den exekverar, vilket möjliggör att koden är
+mer människoaktig (datatyp på variabler och dylikt tolkas när raden exekverar och behöver
+därmed inte specificeras innan). Dock blir koden också mycket långsammare än kompilerad kod,
+som översätts till maskinkod vid kompilering och exekverar direkt när programmet körs.
+
+När shell-scriptet är färdigskrivet bör det stängas.
+För att sedan köra filen main.sh kan följande kommando användas:
+-------------------------------------------------------------------------------------
+$ bash main.sh
+-------------------------------------------------------------------------------------
+
+Ovan användes funktioner från Linux nya interface libgpiod. I nedanstående exempel
+används i stället Linux äldre interface, det virtuella filsystemet sysfs, som 
+
+Antag att tre lysdioder är anslutna till PIN 17, 22 samt 23 och skall blinkas en 
+gång i sekunden via ett shell-script döpt main.sh.
+
+För att generera fördröjning kan kommandot sleep används, där fördröjningstiden
+anges som ett heltal mätt i sekunder. Som exempel, för att generera en fördröjning
+på en sekund kan följande kommando användas:
+
+-------------------------------------------------------------------------------------
+$ sleep 1
+-------------------------------------------------------------------------------------
+
+Shell-scriptets innehåll visas nedan:
+
+-------------------------------------------------------------------------------------
+ 1  #!/bin/bash
+ 2
+ 3  # Reserverar PIN 17, 22 samt 23 för aktuell process:
+ 4  echo 17 > /sys/class/gpio/export
+ 5  echo 22 > /sys/class/gpio/export
+ 7  echo 23 > /sys/class/gpio/export
+ 8 
+ 9  # Sätter PIN 17, 23 samt 23 till utportar:
+10  echo out > /sys/class/gpio/gpio17/direction
+11  echo out > /sys/class/gpio/gpio22/direction
+12  echo out > /sys/class/gpio/gpio23/direction
+13  
+14  # Blinkar kontinuerligt lysdioderna i en slinga:
+15  while true
+16  do
+17     # Tänder först lysdioden ansluten till PIN 17:
+18     echo 1 > /sys/class/gpio/gpio17/value # Tänder PIN 17.
+19     echo 0 > /sys/class/gpio/gpio22/value # Släcker PIN 22.
+20     echo 0 > /sys/class/gpio/gpio23/value # Släcker PIN 23.
+21     sleep 1 # Fördröjer en sekund.
+22
+23     # Tänder sedan lysdioden ansluten till PIN 22:
+24     echo 0 > /sys/class/gpio/gpio17/value # Släcker PIN 17.
+25     echo 1 > /sys/class/gpio/gpio22/value # Tänder PIN 22.
+26     echo 0 > /sys/class/gpio/gpio23/value # Släcker PIN 23.
+27     sleep 1 # Fördröjer en sekund.
+28
+29     # Tänder slutligen lysdioden ansluten till PIN 23:
+30     echo 0 > /sys/class/gpio/gpio17/value # Släcker PIN 17.
+31     echo 0 > /sys/class/gpio/gpio22/value # Tänder PIN 22.
+32     echo 1 > /sys/class/gpio/gpio23/value # Tänder PIN 23.
+33     sleep 1 # Fördröjer en sekund.
+34  done
+-------------------------------------------------------------------------------------
