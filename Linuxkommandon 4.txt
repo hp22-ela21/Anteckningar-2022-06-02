@@ -30,6 +30,31 @@ eller
 $ cd ~
 -------------------------------------------------------------------------------------
 
+5. Utskrift i terminalen:
+-------------------------------------------------------------------------------------
+$ echo Hej!
+-------------------------------------------------------------------------------------
+
+eller för att kunna använda escape-sekvenser såsom nyradstecken \n:
+-------------------------------------------------------------------------------------
+$ echo -e "Hej!\n"
+-------------------------------------------------------------------------------------
+
+6. Inläsning från terminalen (läses in som text, här i strängen name):
+-------------------------------------------------------------------------------------
+$ echo -e "\nEnter your name:"
+$ read name
+$ echo -e "\nHello, $name!"
+-------------------------------------------------------------------------------------
+
+Notera att ett dollartecken används för att skriva ut innehållet i variabeln name.
+Annars tolkas det som att vi vill skriva ut ordet "name" bokstavligt:
+
+-------------------------------------------------------------------------------------
+echo $name => Skriver ut innehållet i variabeln name.
+echo name  => Skriver ut textstutten name.
+-------------------------------------------------------------------------------------
+
 #####################################################################################
 # Del II - Shell-script
 #####################################################################################
@@ -90,13 +115,13 @@ Nedan demonstreras ett shell-skript som används för att blinka två lysdioder 
 till PIN 17 samt 22 var 50:e millisekund via kommandon från biblioteket libgpiod:
 
 -------------------------------------------------------------------------------------
-1  #/bin/bash
-2 
-3  while true # Blinkar lysdioderna kontinuerligt.
-4  do
-5    gpioset --mode=time -u 50000 0 17=1 22=0 # Tänder PIN 17, släcker PIN 22.
-6    gpioset --mode=time -u 50000 0 17=0 22=1 # Släcker PIN 17, tänder PIN 22.
-7  done
+1 #/bin/bash
+2
+3 while true # Blinkar lysdioderna kontinuerligt.
+4 do
+5   gpioset --mode=time -u 50000 0 17=1 22=0 # Tänder PIN 17, släcker PIN 22.
+6   gpioset --mode=time -u 50000 0 17=0 22=1 # Släcker PIN 17, tänder PIN 22.
+7 done
 -------------------------------------------------------------------------------------
 
 Innehållet i filen kan sparas utan att stänga nano-editorn genom att trycka på CTRL + O.
@@ -112,6 +137,29 @@ När shell-scriptet är färdigskrivet bör det stängas.
 För att sedan köra filen main.sh kan följande kommando användas:
 -------------------------------------------------------------------------------------
 $ bash main.sh
+-------------------------------------------------------------------------------------
+
+Ifall PIN-numren skall matas in kan shell-scriptet skrivas om till nedanstående:
+
+-------------------------------------------------------------------------------------
+ 1 #/bin/bash
+ 2
+ 3 # Läser in PIN-nummer för LED 1:
+ 4 echo -e "\nEnter PIN number for LED 1:"
+ 5 read led1
+ 6
+ 7 # Läser in PIN-nummer för LED 2:
+ 8 echo -e "\nEnter PIN number for LED 2:"
+ 9 read led2
+10
+11 # Skriver ut PIN-numren för verifikation:
+12 echo -e \n"LEDs connected to PIN $led1 and PIN $led2!\n"
+13
+14 while true # Blinkar lysdioderna kontinuerligt.
+15 do
+16    gpioset --mode=time -u 50000 0 $led1=1 $led2=0 # Tänder LED 1, släcker LED 2.
+17    gpioset --mode=time -u 50000 0 $led1=0 $led2=1 # Släcker LED 1, tänder LED 2.
+18 done
 -------------------------------------------------------------------------------------
 
 Ovan användes funktioner från Linux nya interface libgpiod. I nedanstående exempel
@@ -131,37 +179,37 @@ $ sleep 1
 Shell-scriptets innehåll visas nedan:
 
 -------------------------------------------------------------------------------------
- 1  #!/bin/bash
+ 1 #!/bin/bash
  2
  3  # Reserverar PIN 17, 22 samt 23 för aktuell process:
- 4  echo 17 > /sys/class/gpio/export
- 5  echo 22 > /sys/class/gpio/export
- 7  echo 23 > /sys/class/gpio/export
+ 4 echo 17 > /sys/class/gpio/export
+ 5 echo 22 > /sys/class/gpio/export
+ 7 echo 23 > /sys/class/gpio/export
  8 
- 9  # Sätter PIN 17, 23 samt 23 till utportar:
-10  echo out > /sys/class/gpio/gpio17/direction
-11  echo out > /sys/class/gpio/gpio22/direction
-12  echo out > /sys/class/gpio/gpio23/direction
+ 9 # Sätter PIN 17, 23 samt 23 till utportar:
+10 echo out > /sys/class/gpio/gpio17/direction
+11 echo out > /sys/class/gpio/gpio22/direction
+12 echo out > /sys/class/gpio/gpio23/direction
 13  
-14  # Blinkar kontinuerligt lysdioderna i en slinga:
-15  while true
-16  do
-17     # Tänder först lysdioden ansluten till PIN 17:
-18     echo 1 > /sys/class/gpio/gpio17/value # Tänder PIN 17.
-19     echo 0 > /sys/class/gpio/gpio22/value # Släcker PIN 22.
-20     echo 0 > /sys/class/gpio/gpio23/value # Släcker PIN 23.
-21     sleep 1 # Fördröjer en sekund.
+14 # Blinkar kontinuerligt lysdioderna i en slinga:
+15 while true
+16 do
+17    # Tänder först lysdioden ansluten till PIN 17:
+18    echo 1 > /sys/class/gpio/gpio17/value # Tänder PIN 17.
+19    echo 0 > /sys/class/gpio/gpio22/value # Släcker PIN 22.
+20    echo 0 > /sys/class/gpio/gpio23/value # Släcker PIN 23.
+21    sleep 1 # Fördröjer en sekund.
 22
-23     # Tänder sedan lysdioden ansluten till PIN 22:
-24     echo 0 > /sys/class/gpio/gpio17/value # Släcker PIN 17.
-25     echo 1 > /sys/class/gpio/gpio22/value # Tänder PIN 22.
-26     echo 0 > /sys/class/gpio/gpio23/value # Släcker PIN 23.
-27     sleep 1 # Fördröjer en sekund.
+23    # Tänder sedan lysdioden ansluten till PIN 22:
+24    echo 0 > /sys/class/gpio/gpio17/value # Släcker PIN 17.
+25    echo 1 > /sys/class/gpio/gpio22/value # Tänder PIN 22.
+26    echo 0 > /sys/class/gpio/gpio23/value # Släcker PIN 23.
+27    sleep 1 # Fördröjer en sekund.
 28
-29     # Tänder slutligen lysdioden ansluten till PIN 23:
-30     echo 0 > /sys/class/gpio/gpio17/value # Släcker PIN 17.
-31     echo 0 > /sys/class/gpio/gpio22/value # Tänder PIN 22.
-32     echo 1 > /sys/class/gpio/gpio23/value # Tänder PIN 23.
-33     sleep 1 # Fördröjer en sekund.
-34  done
+29    # Tänder slutligen lysdioden ansluten till PIN 23:
+30    echo 0 > /sys/class/gpio/gpio17/value # Släcker PIN 17.
+31    echo 0 > /sys/class/gpio/gpio22/value # Tänder PIN 22.
+32    echo 1 > /sys/class/gpio/gpio23/value # Tänder PIN 23.
+33    sleep 1 # Fördröjer en sekund.
+34 done
 -------------------------------------------------------------------------------------
